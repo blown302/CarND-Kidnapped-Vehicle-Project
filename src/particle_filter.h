@@ -9,7 +9,11 @@
 #ifndef PARTICLE_FILTER_H_
 #define PARTICLE_FILTER_H_
 
+#include <random> // Need this for sampling from distributions
+
 #include "helper_functions.h"
+
+using namespace std;
 
 struct Particle {
 
@@ -28,9 +32,7 @@ struct Particle {
 class ParticleFilter {
 	
 	// Number of particles to draw
-	int num_particles; 
-	
-	
+	unsigned int num_particles;
 	
 	// Flag, if filter is initialized
 	bool is_initialized;
@@ -48,9 +50,9 @@ public:
 	ParticleFilter() : num_particles(0), is_initialized(false) {}
 
 	// Destructor
-	~ParticleFilter() {}
+	~ParticleFilter() = default;
 
-	/**
+    /**
 	 * init Initializes particle filter by initializing particles to Gaussian
 	 *   distribution around first position and all the weights to 1.
 	 * @param x Initial x position [m] (simulated estimate from GPS)
@@ -115,6 +117,8 @@ public:
 	const bool initialized() const {
 		return is_initialized;
 	}
+private:
+	default_random_engine gen;
 };
 
 
