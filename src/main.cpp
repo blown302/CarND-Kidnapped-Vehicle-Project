@@ -1,7 +1,7 @@
 #include <uWS/uWS.h>
 #include <iostream>
 #include "json.hpp"
-#include <math.h>
+#include <cmath>
 #include "particle_filter.h"
 
 using namespace std;
@@ -12,10 +12,10 @@ using json = nlohmann::json;
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
-std::string hasData(std::string s) {
+std::string hasData(const string &s) {
   auto found_null = s.find("null");
-  auto b1 = s.find_first_of("[");
-  auto b2 = s.find_first_of("]");
+  auto b1 = s.find_first_of('[');
+  auto b2 = s.find_first_of(']');
   if (found_null != std::string::npos) {
     return "";
   }
@@ -55,7 +55,7 @@ int main()
     {
 
       auto s = hasData(std::string(data));
-      if (s != "") {
+      if (!s.empty()) {
       	
       	
         auto j = json::parse(s);
@@ -73,13 +73,12 @@ int main()
 			double sense_theta = std::stod(j[1]["sense_theta"].get<std::string>());
 
 			pf.init(sense_x, sense_y, sense_theta, sigma_pos);
-		  }
-		  else {
+		  } else {
 			// Predict the vehicle's next state from previous (noiseless control) data.
 		  	double previous_velocity = std::stod(j[1]["previous_velocity"].get<std::string>());
 			double previous_yawrate = std::stod(j[1]["previous_yawrate"].get<std::string>());
 
-			pf.prediction(delta_t, sigma_pos, previous_velocity, previous_yawrate);
+			pf.prediction(delta_t, previous_velocity, previous_yawrate);
 		  }
 
 		  // receive noisy observation data from the simulator
@@ -104,7 +103,7 @@ int main()
 
         	for(int i = 0; i < x_sense.size(); i++)
         	{
-        		LandmarkObs obs;
+        		LandmarkObs obs{};
         		obs.x = x_sense[i];
 				obs.y = y_sense[i];
 				noisy_observations.push_back(obs);

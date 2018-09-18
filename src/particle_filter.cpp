@@ -20,17 +20,17 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-    double std_dev_x = std[0];
-    double std_dev_y = std[1];
-    double std_dev_theta = std[2];
+    std_dev_pos_x = std[0];
+    std_dev_pos_y = std[1];
+    std_dev_pos_theta = std[2];
 
     // Create normal distributions
-    normal_distribution<double> dist_x(x, std_dev_x);
-    normal_distribution<double> dist_y(y, std_dev_y);
-    normal_distribution<double> dist_theta(theta, std_dev_theta);
+    normal_distribution<double> dist_x = getPositionNoiseDistributionX(x);
+    normal_distribution<double> dist_y = getPositionNoiseDistributionY(y);
+    normal_distribution<double> dist_theta = getPositionNoiseDistributionTheta(theta);
 
     for (int i = 0; i < num_particles; ++i) {
-        particles.push_back(Particle {i, dist_x(gen), dist_y(gen), dist_theta(gen)});
+        particles.push_back(Particle {i, dist_x(gen), dist_y(gen), dist_theta(gen), 1});
     }
 
     weights = vector<double>(num_particles, 1);
@@ -38,12 +38,26 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     is_initialized = true;
 }
 
-void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-	// TODO: Add measurements to each particle and add random Gaussian noise.
-	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
-	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
-	//  http://www.cplusplus.com/reference/random/default_random_engine/
+void ParticleFilter::prediction(double delta_t, double velocity, double yaw_rate) {
+    for (Particle &particle : particles) {
+        if (abs(particle.theta) < .001) {
+            predictStraight(particle, delta_t, yaw_rate, velocity);
+        } else {
+            predictCurved(particle, delta_t, yaw_rate, velocity);
+        }
+        addPositionNoise(particle);
+    }
+}
 
+void ParticleFilter::predictStraight(Particle &particle, double delta_t, double yaw_rate, double velocity) {
+    particle.x += velocity * delta_t * cos(yaw_rate);
+    particle.y += velocity * delta_t * sin(yaw_rate);
+}
+
+void ParticleFilter::predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity) {
+    particle.x += (velocity/yaw_rate) * (sin(particle.theta + yaw_rate * delta_t) - sin(particle.theta));
+    particle.y += (velocity/yaw_rate) * (cosh(particle.theta) - cos(particle.theta + yaw_rate * delta_t));
+    particle.theta += yaw_rate * delta_t;
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -114,4 +128,22 @@ string ParticleFilter::getSenseY(Particle best)
     string s = ss.str();
     s = s.substr(0, s.length()-1);  // get rid of the trailing space
     return s;
+}
+
+void ParticleFilter::addPositionNoise(Particle particle) {
+    particle.x += getPositionNoiseDistributionX(particle.x)(gen);
+    particle.y += getPositionNoiseDistributionY(particle.y)(gen);
+    particle.theta += getPositionNoiseDistributionTheta(particle.theta)(gen);
+}
+
+normal_distribution<double> ParticleFilter::getPositionNoiseDistributionX(double x) {
+    return normal_distribution<double>(x, std_dev_pos_x);
+}
+
+normal_distribution<double> ParticleFilter::getPositionNoiseDistributionY(double y) {
+    return normal_distribution<double>(y, std_dev_pos_y);
+}
+
+normal_distribution<double> ParticleFilter::getPositionNoiseDistributionTheta(double theta) {
+    return normal_distribution<double>(theta, std_dev_pos_theta);
 }
