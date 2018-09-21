@@ -34,13 +34,10 @@ struct Particle {
 class ParticleFilter {
 	
 	// Number of particles_ to draw
-	unsigned int num_particles;
+	unsigned int num_particles_;
 	
 	// Flag, if filter is initialized
-	bool is_initialized;
-	
-	// Vector of weights of all particles_
-	std::vector<double> weights;
+	bool is_initialized_;
 	
 public:
 	
@@ -49,8 +46,10 @@ public:
 
 	// Constructor
 	// @param num_particles Number of particles_
-	ParticleFilter(const Map map, const double std_dev_pos[], const double std_dev_land[]) : num_particles(100), is_initialized(false) {
+	ParticleFilter(const Map map, const unsigned int num_particles, const double std_dev_pos[],
+				   const double std_dev_land[]) : is_initialized_(false) {
 	    map_ = map;
+	    num_particles_ = num_particles;
 	    std_dev_pos_x = std_dev_pos[0];
 	    std_dev_pos_y = std_dev_pos[1];
 	    std_dev_pos_theta = std_dev_pos[2];
@@ -117,7 +116,7 @@ public:
 	* initialized Returns whether particle filter is initialized yet or not.
 	*/
 	const bool initialized() const {
-		return is_initialized;
+		return is_initialized_;
 	}
 private:
     Map map_;

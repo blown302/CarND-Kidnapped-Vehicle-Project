@@ -28,18 +28,16 @@ void ParticleFilter::init(double x, double y, double theta) {
     normal_distribution<double> dist_y = getPositionNoiseDistributionY(y);
     normal_distribution<double> dist_theta = getPositionNoiseDistributionTheta(theta);
 
-    for (int i = 0; i < num_particles; ++i) {
+    for (int i = 0; i < num_particles_; ++i) {
         particles_.push_back(Particle {i, dist_x(gen), dist_y(gen), dist_theta(gen), 1});
     }
 
-    weights = vector<double>(num_particles, 1);
-
-    is_initialized = true;
+    is_initialized_ = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double velocity, double yaw_rate) {
     for (auto &particle : particles_) {
-        if (abs(particle.theta) < .001) {
+        if (abs(yaw_rate) < .001) {
             predictStraight(particle, delta_t, yaw_rate, velocity);
         } else {
             predictCurved(particle, delta_t, yaw_rate, velocity);
@@ -55,7 +53,7 @@ void ParticleFilter::predictStraight(Particle &particle, double delta_t, double 
 
 void ParticleFilter::predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity) {
     particle.x += (velocity/yaw_rate) * (sin(particle.theta + yaw_rate * delta_t) - sin(particle.theta));
-    particle.y += (velocity/yaw_rate) * (cosh(particle.theta) - cos(particle.theta + yaw_rate * delta_t));
+    particle.y += (velocity/yaw_rate) * (cos(particle.theta) - cos(particle.theta + yaw_rate * delta_t));
     particle.theta += yaw_rate * delta_t;
 }
 
