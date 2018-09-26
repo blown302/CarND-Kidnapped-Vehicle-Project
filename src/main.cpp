@@ -35,6 +35,7 @@ int main()
 
   double sigma_pos [3] = {0.3, 0.3, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
   double sigma_landmark [2] = {0.3, 0.3}; // Landmark measurement uncertainty [x [m], y [m]]
+  const unsigned int NUM_PARTICLES = 100;
 
   // Read map data
   Map map;
@@ -44,7 +45,7 @@ int main()
   }
 
   // Create particle filter
-  ParticleFilter pf(map, sigma_pos, sigma_landmark);
+  ParticleFilter pf(map, NUM_PARTICLES, sigma_pos, sigma_landmark);
 
   h.onMessage([&pf,&map,&delta_t,&sensor_range,&sigma_pos,&sigma_landmark](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.

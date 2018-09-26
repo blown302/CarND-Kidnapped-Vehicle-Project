@@ -14,6 +14,7 @@
 #include <random> // Need this for sampling from distributions
 
 #include "helper_functions.h"
+#include <iostream>
 
 using namespace std;
 
@@ -137,7 +138,7 @@ private:
 
     static void predictStraight(Particle &particle, double delta_t, double yaw_rate, double velocity);
     static void predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity);
-    void addPositionNoise(Particle particle);
+    void addPositionNoise(Particle &particle);
     void addMeasurementNoise(LandmarkObs observation);
     normal_distribution<double> getPositionNoiseDistributionX(double x);
     normal_distribution<double> getPositionNoiseDistributionY(double y);

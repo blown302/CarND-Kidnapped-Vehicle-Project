@@ -47,8 +47,10 @@ void ParticleFilter::prediction(double delta_t, double velocity, double yaw_rate
 }
 
 void ParticleFilter::predictStraight(Particle &particle, double delta_t, double yaw_rate, double velocity) {
-    particle.x += velocity * delta_t * cos(yaw_rate);
-    particle.y += velocity * delta_t * sin(yaw_rate);
+    cout << "going straight with yaw_rate=" <<  yaw_rate << endl;
+
+    particle.x += velocity * delta_t * cos(particle.theta);
+    particle.y += velocity * delta_t * sin(particle.theta);
 }
 
 void ParticleFilter::predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity) {
@@ -62,10 +64,18 @@ vector<LandmarkObs> ParticleFilter::dataAssociation(Particle &particle, vector<L
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
-    vector<LandmarkObs> results(observations.size());
+    vector<LandmarkObs> results;
+    particle.sense_x = vector<double>();
+    particle.sense_y = vector<double>();
+    particle.associations = vector<int>();
 	for (auto &observation : observations) {
         auto transformedObservation = transformObservationToMapCoordinates(particle, observation);
+
+        particle.sense_x.push_back(transformedObservation.x);
+        particle.sense_y.push_back(transformedObservation.y);
         transformedObservation.id = findNearestNeighbor(transformedObservation);
+        particle.associations.push_back(transformedObservation.id);
+
         results.push_back(transformedObservation);
 	}
 	return results;
@@ -84,10 +94,8 @@ void ParticleFilter::updateWeights(double sensor_range, vector<LandmarkObs> &obs
 	//   http://planning.cs.uiuc.edu/node99.html
 	for (auto &particle : particles_) {
         auto associatedObservations = dataAssociation(particle, observations);
-        particle.weight = calculateObservationWeights(observations);
+        particle.weight = calculateObservationWeights(associatedObservations);
     }
-
-
 }
 
 void ParticleFilter::resample() {
@@ -156,10 +164,10 @@ string ParticleFilter::getSenseY(Particle best)
     return s;
 }
 
-void ParticleFilter::addPositionNoise(Particle particle) {
-    particle.x += getPositionNoiseDistributionX(particle.x)(gen);
-    particle.y += getPositionNoiseDistributionY(particle.y)(gen);
-    particle.theta += getPositionNoiseDistributionTheta(particle.theta)(gen);
+void ParticleFilter::addPositionNoise(Particle &particle) {
+    particle.x = getPositionNoiseDistributionX(particle.x)(gen);
+    particle.y = getPositionNoiseDistributionY(particle.y)(gen);
+    particle.theta = getPositionNoiseDistributionTheta(particle.theta)(gen);
 }
 
 void ParticleFilter::addMeasurementNoise(LandmarkObs observation) {
@@ -188,8 +196,8 @@ normal_distribution<double> ParticleFilter::getLandmarkNoiseDistributionY(double
 }
 
 LandmarkObs ParticleFilter::transformObservationToMapCoordinates(Particle particle, LandmarkObs &observation) {
-    double x = particle.x + (cos(particle.theta * observation.x)) - (sin(particle.theta) * observation.y);
-    double y = particle.y + (sin(particle.theta * observation.x)) + (cos(particle.theta) * observation.y);
+    double x = particle.x + (cos(particle.theta) * observation.x) - (sin(particle.theta) * observation.y);
+    double y = particle.y + (sin(particle.theta) * observation.x) + (cos(particle.theta) * observation.y);
     return LandmarkObs{0, x, y};
 }
 
@@ -198,7 +206,7 @@ int ParticleFilter::findNearestNeighbor(LandmarkObs observation) {
     int smallest_id = numeric_limits<int>::infinity();
 
     for (auto landmark : map_.landmark_list) {
-        auto distance = dist(landmark.x_f, landmark.y_f, observation.x, observation.y);
+        auto distance = dist(observation.x, observation.y, landmark.x_f, landmark.y_f);
 
         if (distance < smallest_dist) {
             smallest_dist = distance;
@@ -210,12 +218,12 @@ int ParticleFilter::findNearestNeighbor(LandmarkObs observation) {
 }
 
 double ParticleFilter::calculateObservationWeight(LandmarkObs &observation) {
-    auto matchingLandmark = map_.landmark_list[observation.id];
-    double gauss_norm = (1/(2 * M_PI * std_dev_land_x * std_dev_land_y));
-    double exponent = (pow((observation.x - matchingLandmark.x_f), 2)/(2 * pow(std_dev_land_x, 2))
-            + (pow(observation.y - matchingLandmark.y_f, 2)/2 * pow(std_dev_land_y, 2)));
-
-    return gauss_norm * exp(exponent);
+    auto matchingLandmark = map_.landmark_list[observation.id - 1];
+    double gauss_norm = 1/(2 * M_PI * std_dev_land_x * std_dev_land_y);
+    double exponent = (pow(observation.x - matchingLandmark.x_f, 2))/(2 * pow(std_dev_land_x, 2))
+            + (pow(observation.y - matchingLandmark.y_f, 2))/((2 * pow(std_dev_land_y, 2)));
+    double e1 = exp(-exponent);
+    return gauss_norm * e1;
 }
 
 double ParticleFilter::calculateObservationWeights(vector<LandmarkObs> &observations) {
