@@ -62,8 +62,9 @@ SCENARIO("predict particle at x=102 y=65 theta=(5*pi)/8") {
 
 SCENARIO("transform observations into map coordinates") {
     ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
-    particle_filter.particles_.push_back(particle);
+    particle_filter.particles_[0] = particle;
     vector<LandmarkObs> observations{{0, 2, 2}, {0, 3, -2}, {0, 0, -4}};
     CHECK(particle_filter.particles_.size() == 1);
     CHECK(observations.size() == 3);
@@ -91,8 +92,9 @@ SCENARIO("transform observations into map coordinates") {
 
 SCENARIO("associate landmark to observation") {
     ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
-    particle_filter.particles_.push_back(particle);
+    particle_filter.particles_[0] = particle;
     vector<LandmarkObs> observations{{0, 2, 2}, {0, 3, -2}, {0, 0, -4}};
     CHECK(particle_filter.particles_.size() == 1);
     CHECK(observations.size() == 3);
@@ -118,8 +120,9 @@ SCENARIO("associate landmark to observation") {
 
 SCENARIO("update final weight") {
     ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
-    particle_filter.particles_.push_back(particle);
+    particle_filter.particles_[0] = particle;
     vector<LandmarkObs> observations{{0, 2, 2}, {0, 3, -2}, {0, 0, -4}};
     CHECK(particle_filter.particles_.size() == 1);
     CHECK(observations.size() == 3);

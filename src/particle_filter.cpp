@@ -30,6 +30,7 @@ void ParticleFilter::init(double x, double y, double theta) {
 
     for (int i = 0; i < num_particles_; ++i) {
         particles_.push_back(Particle {i, dist_x(gen), dist_y(gen), dist_theta(gen), 1});
+        weights_.push_back(1);
     }
 
     is_initialized_ = true;
@@ -92,10 +93,12 @@ void ParticleFilter::updateWeights(double sensor_range, vector<LandmarkObs> &obs
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
-	for (auto &particle : particles_) {
-        auto associatedObservations = dataAssociation(particle, observations);
-        particle.weight = calculateObservationWeights(associatedObservations);
-    }
+	for (auto i = 0; i < num_particles_; ++i) {
+        auto associatedObservations = dataAssociation(particles_[i], observations);
+        auto total_weight = calculateObservationWeights(associatedObservations);
+        particles_[i].weight = total_weight;
+        weights_[i] = total_weight;
+	}
 }
 
 void ParticleFilter::resample() {
@@ -103,24 +106,13 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
     // TODO: pull out random to a func
-    vector<Particle> particles;
-	int index = static_cast<int>((rand() / (RAND_MAX)) * particles_.size());
-    double beta = 0.;
-    auto max = max_element(particles_.begin(), particles_.end(),
-	        [](const Particle &a, const Particle &b){
-               return a.weight < b.weight;
-            })->weight;
+    discrete_distribution<int> weight_distribution(weights_.begin(), weights_.end());
+    vector<Particle> sampled_particles(num_particles_);
 
-	for (auto i = 0; i < particles_.size(); ++i) {
-	    // TODO: pull out random to a func
-	    beta += (rand() / (RAND_MAX)) * 2. * max;
-	    while (beta > particles_[index].weight) {
-            beta -= particles_[index].weight;
-            index = static_cast<int>((index + 1) % particles_.size());
-	    }
-        particles.push_back(particles_[index]);
-	}
-    particles_ = particles;
+    for (auto i = 0; i < num_particles_; ++i) {
+        sampled_particles[i] = (particles_[weight_distribution(gen)]);
+    }
+    particles_ = sampled_particles;
 }
 
 Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations, 

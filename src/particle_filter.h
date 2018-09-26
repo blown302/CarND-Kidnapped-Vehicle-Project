@@ -45,6 +45,9 @@ public:
 	// Set of current particles_
 	std::vector<Particle> particles_;
 
+	// Set of weights relating to particle.
+	std::vector<double> weights_;
+
 	// Constructor
 	// @param num_particles Number of particles_
 	ParticleFilter(const Map map, const unsigned int num_particles, const double std_dev_pos[],
