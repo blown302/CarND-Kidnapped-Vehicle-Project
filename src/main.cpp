@@ -111,7 +111,7 @@ int main()
         	}
 
 		  // Update the weights and resample
-		  pf.updateWeights(sensor_range, noisy_observations);
+		  pf.updateWeights(noisy_observations);
 		  pf.resample();
 
 		  // Calculate and output the average weighted error of the particle filter over all time steps so far.

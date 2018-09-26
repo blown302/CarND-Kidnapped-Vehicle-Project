@@ -27,7 +27,7 @@ Map getLoadedMap() {
 
 
 SCENARIO("initialize particle filter") {
-    ParticleFilter particle_filter(Map{}, 100, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    ParticleFilter particle_filter(Map{}, 100, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3}, 50);
     WHEN("called with 100 items") {
         particle_filter.init(1,1,.1);
 
@@ -42,7 +42,7 @@ SCENARIO("initialize particle filter") {
 };
 
 SCENARIO("predict particle at x=102 y=65 theta=(5*pi)/8") {
-    ParticleFilter particle_filter(Map{}, 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    ParticleFilter particle_filter(Map{}, 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3}, 50);
     Particle particle{0, 102, 65,(5*M_PI)/8};
     particle_filter.particles_.push_back(particle);
 
@@ -61,7 +61,7 @@ SCENARIO("predict particle at x=102 y=65 theta=(5*pi)/8") {
 };
 
 SCENARIO("transform observations into map coordinates") {
-    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3}, 50);
     particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
     particle_filter.particles_[0] = particle;
@@ -70,7 +70,7 @@ SCENARIO("transform observations into map coordinates") {
     CHECK(observations.size() == 3);
 
     WHEN("update is called with x=4, y=5 yaw=-M_PI/2") {
-        particle_filter.updateWeights(numeric_limits<double>::infinity(), observations);
+        particle_filter.updateWeights(observations);
 
         auto p = particle_filter.particles_[0];
         THEN("observation 1 sets x=6 y=3") {
@@ -91,7 +91,7 @@ SCENARIO("transform observations into map coordinates") {
 };
 
 SCENARIO("associate landmark to observation") {
-    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3}, 50);
     particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
     particle_filter.particles_[0] = particle;
@@ -99,7 +99,7 @@ SCENARIO("associate landmark to observation") {
     CHECK(particle_filter.particles_.size() == 1);
     CHECK(observations.size() == 3);
 
-    particle_filter.updateWeights(numeric_limits<double>::infinity(), observations);
+    particle_filter.updateWeights(observations);
 
     auto p = particle_filter.particles_[0];
     WHEN("update is called") {
@@ -119,7 +119,7 @@ SCENARIO("associate landmark to observation") {
 };
 
 SCENARIO("update final weight") {
-    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3});
+    ParticleFilter particle_filter(getLoadedMap(), 1, (double[3]){0.3, 0.3, 0.01}, (double[2]){0.3, 0.3}, 50);
     particle_filter.init(1, 1, .1);
     Particle particle{0, 4, 5, (-M_PI)/2};
     particle_filter.particles_[0] = particle;
@@ -127,7 +127,7 @@ SCENARIO("update final weight") {
     CHECK(particle_filter.particles_.size() == 1);
     CHECK(observations.size() == 3);
 
-    particle_filter.updateWeights(numeric_limits<double>::infinity(), observations);
+    particle_filter.updateWeights(observations);
 
     auto p = particle_filter.particles_[0];
     WHEN("update is called ") {

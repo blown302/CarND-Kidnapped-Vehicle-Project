@@ -17,6 +17,7 @@
 #include <limits>
 
 #include "particle_filter.h"
+#include "map.h"
 #include "helper_functions.h"
 
 using namespace std;
@@ -62,14 +63,28 @@ void ParticleFilter::dataAssociation(Particle &particle, vector<LandmarkObs> &ob
     particle.sense_x = vector<double>(observations.size());
     particle.sense_y = vector<double>(observations.size());
     particle.associations = vector<int>(observations.size());
-	for (auto i = 0; i < observations.size(); ++i) {
+
+    // filter out landmarks that are out of range
+    vector<Map::single_landmark_s> filtered_landmarks = getLandmarksWithinRange(particle);
+
+    for (auto i = 0; i < observations.size(); ++i) {
         auto transformedObservation = transformObservationToMapCoordinates(particle, observations[i]);
 
         particle.sense_x[i] = transformedObservation.x;
         particle.sense_y[i] = transformedObservation.y;
-        auto nearest_id = findNearestNeighbor(transformedObservation);
+        auto nearest_id = findNearestNeighbor(filtered_landmarks, transformedObservation);
         particle.associations[i] = nearest_id;
 	}
+}
+
+vector<Map::single_landmark_s> ParticleFilter::getLandmarksWithinRange(const Particle &particle) const {
+    vector<Map::single_landmark_s> filtered_landmarks;
+    for (auto &lm : map_.landmark_list) {
+        if (dist(particle.x, particle.y, lm.x_f, lm.y_f) < sensor_range_) {
+            filtered_landmarks.push_back(lm);
+        }
+    }
+    return filtered_landmarks;
 }
 
 void ParticleFilter::updateWeights(vector<LandmarkObs> &observations) {
@@ -143,11 +158,11 @@ LandmarkObs ParticleFilter::transformObservationToMapCoordinates(Particle partic
     return LandmarkObs{0, x, y};
 }
 
-int ParticleFilter::findNearestNeighbor(LandmarkObs observation) {
+int ParticleFilter::findNearestNeighbor(vector<Map::single_landmark_s> filtered_landmarks, LandmarkObs observation) {
     double smallest_dist = numeric_limits<double>::infinity();
     int smallest_id = numeric_limits<int>::infinity();
 
-    for (auto landmark : map_.landmark_list) {
+    for (auto landmark : filtered_landmarks) {
         auto distance = dist(observation.x, observation.y, landmark.x_f, landmark.y_f);
 
         if (distance < smallest_dist) {

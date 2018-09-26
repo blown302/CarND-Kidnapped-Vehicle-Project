@@ -128,21 +128,84 @@ private:
     /**
 	 * dataAssociation Finds which observations correspond to which landmarks (likely by using
 	 *   a nearest-neighbors data association).
-	 * @param predicted Vector of predicted landmark observations
+	 * @param particle Particle to associate observations to
 	 * @param observations Vector of landmark observations
 	 */
     void dataAssociation(Particle& particle, vector<LandmarkObs>& observations);
 
+	/**
+	 * Predict location of particle when going in a straight line.
+	 * @param particle Particle to predict
+	 * @param delta_t Time elapsed since last time step
+	 * @param velocity Velocity of car from t to t+1 [m/s]
+	 * @param yaw_rate Yaw rate of car from t to t+1 [rad/s]
+	 */
     static void predictStraight(Particle &particle, double delta_t, double yaw_rate, double velocity);
+    /**
+     * Predict location of particle when going trajectory is curved.
+     * @param particle Particle to predict
+     * @param delta_t Time elapsed since last time step
+     * @param yaw_rate Velocity of car from t to t+1 [m/s]
+     * @param velocity Yaw rate of car from t to t+1 [rad/s]
+     */
     static void predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity);
+    /**
+     * Add positional noise to a particle.
+     * @param particle Particle to add noise to.
+     */
     void addPositionNoise(Particle &particle);
+    /**
+     * Gets normal_distribution for x coordinate.
+     * @param x X coordinate to derive distribution
+     * @return normal_distribution with x as mean.
+     */
     normal_distribution<double> getPositionNoiseDistributionX(double x);
+	/**
+     * Gets normal_distribution for y coordinate.
+     * @param y Y coordinate to derive distribution
+     * @return normal_distribution with y as mean
+     */
     normal_distribution<double> getPositionNoiseDistributionY(double y);
+	/**
+     * Gets normal_distribution for theta.
+     * @param theta theta coordinate to derive distribution
+     * @return normal_distribution with theta as mean
+     */
     normal_distribution<double> getPositionNoiseDistributionTheta(double theta);
+    /**
+     * Transforms observation to map coordinates with respect to particle position and orientation.
+     * @param particle Particle used to relate observation to
+     * @param observation Observation to map to map coordinates
+     * @return LandmarkObs Observation mapped to map coordinates
+     */
     LandmarkObs transformObservationToMapCoordinates(Particle particle, LandmarkObs &observation);
-    int findNearestNeighbor(LandmarkObs observation);
+    /**
+     * Find closest map landmark to observation.
+     * @param filtered_landmarks Landmarks within range
+     * @param observation Observation to to find closest landmark
+     * @return int Landmark id of the closest landmark
+     */
+    int findNearestNeighbor(vector<Map::single_landmark_s> filtered_landmarks, LandmarkObs observation);
+    /**
+     * Calculate weight for of an observation based on associated landmark.
+     * @param sense_x X observation coordinate mapped to global coordinates
+     * @param sense_y Y observation coordinate mapped to global coordinates
+     * @param association_id Id of the closest landmark to the observation in global space
+     * @return double weight of a single observation
+     */
     double calculateObservationWeight(double sense_x, double sense_y, int association_id);
+    /**
+     * Calculate total weight for of a particle.
+     * @param particle Particle with associated observations
+     * @return double Total particle weight
+     */
     double calculateObservationWeights(Particle &particle);
+    /**
+     * Filters out map landmarks that are out of sensor range.
+     * @param particle Particle to use as point of reference
+     * @return vector<Map::single_landmark_s> valid landmarks for this particle
+     */
+	vector<Map::single_landmark_s> getLandmarksWithinRange(const Particle &particle) const;
 };
 
 
