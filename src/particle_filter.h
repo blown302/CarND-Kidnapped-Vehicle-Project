@@ -51,8 +51,9 @@ public:
 	// Constructor
 	// @param num_particles Number of particles_
 	ParticleFilter(const Map map, const unsigned int num_particles, const double std_dev_pos[],
-				   const double std_dev_land[]) : is_initialized_(false) {
+				   const double std_dev_land[], const double sensor_range) : is_initialized_(false) {
 	    map_ = map;
+	    sensor_range_ = sensor_range;
 	    num_particles_ = num_particles;
 	    std_dev_pos_x = std_dev_pos[0];
 	    std_dev_pos_y = std_dev_pos[1];
@@ -96,7 +97,7 @@ public:
 	 * @param observations Vector of landmark observations
 	 * @param map Map class containing map landmarks
 	 */
-	void updateWeights(double sensor_range, vector<LandmarkObs> &observations);
+	void updateWeights(vector<LandmarkObs> &observations);
 	
 	/**
 	 * resample Resamples from the updated set of particles to form
@@ -104,14 +105,6 @@ public:
 	 */
 	void resample();
 
-	/*
-	 * Set a particles_ list of associations, along with the associations calculated world x,y coordinates
-	 * This can be a very useful debugging tool to make sure transformations are correct and assocations correctly connected
-	 */
-	Particle SetAssociations(Particle& particle, const std::vector<int>& associations,
-		                     const std::vector<double>& sense_x, const std::vector<double>& sense_y);
-
-	
 	std::string getAssociations(Particle best);
 	std::string getSenseX(Particle best);
 	std::string getSenseY(Particle best);
@@ -130,6 +123,7 @@ private:
     double std_dev_pos_theta;
     double std_dev_land_x;
     double std_dev_land_y;
+    double sensor_range_;
 
     /**
 	 * dataAssociation Finds which observations correspond to which landmarks (likely by using
@@ -137,21 +131,18 @@ private:
 	 * @param predicted Vector of predicted landmark observations
 	 * @param observations Vector of landmark observations
 	 */
-    vector<LandmarkObs> dataAssociation(Particle& particle, vector<LandmarkObs>& observations);
+    void dataAssociation(Particle& particle, vector<LandmarkObs>& observations);
 
     static void predictStraight(Particle &particle, double delta_t, double yaw_rate, double velocity);
     static void predictCurved(Particle &particle, double delta_t, double yaw_rate, double velocity);
     void addPositionNoise(Particle &particle);
-    void addMeasurementNoise(LandmarkObs observation);
     normal_distribution<double> getPositionNoiseDistributionX(double x);
     normal_distribution<double> getPositionNoiseDistributionY(double y);
     normal_distribution<double> getPositionNoiseDistributionTheta(double theta);
-    normal_distribution<double> getLandmarkNoiseDistributionX(double x);
-    normal_distribution<double> getLandmarkNoiseDistributionY(double y);
     LandmarkObs transformObservationToMapCoordinates(Particle particle, LandmarkObs &observation);
     int findNearestNeighbor(LandmarkObs observation);
-    double calculateObservationWeight(LandmarkObs &observation);
-    double calculateObservationWeights(vector<LandmarkObs> &observations);
+    double calculateObservationWeight(double sense_x, double sense_y, int association_id);
+    double calculateObservationWeights(Particle &particle);
 };
 
 
